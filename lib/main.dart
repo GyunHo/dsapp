@@ -27,7 +27,14 @@ class MyApp extends StatelessWidget {
     return StreamBuilder<User>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (snapshot.data == null) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return MaterialApp(
+            home: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
           return MaterialApp(
             home: AuthPage(),
             debugShowCheckedModeBanner: false,
@@ -39,17 +46,15 @@ class MyApp extends StatelessWidget {
                 .collection('users')
                 .doc(uid)
                 .snapshots(),
-            builder: (BuildContext con, AsyncSnapshot snap) {
-              if (snap.connectionState == ConnectionState.waiting ||
-                  !snap.hasData) {
+            builder: (BuildContext con, AsyncSnapshot<DocumentSnapshot> snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
                 return MaterialApp(
                   home: Center(
                     child: CircularProgressIndicator(),
                   ),
                 );
               }
-
-              if (snap?.data['auth'] ?? false) {
+              if (snap.data?.data()['auth'] ?? false) {
                 return MultiProvider(
                   providers: [
                     ChangeNotifierProvider<Bloc>(create: (_) => Bloc()),
